@@ -2,6 +2,8 @@ package pipe
 
 type Func[Args any] func(args Args, responses []any) (response any, err error)
 
+// Pipe series of functions into one processing unit
+// ordering our logic in form of pipe for readable and clean code
 func Pipe[Args any](funcs ...Func[Args]) Func[Args] {
 	return func(args Args, responses []any) (response any, err error) {
 		for _, f := range funcs {
@@ -18,6 +20,8 @@ func Pipe[Args any](funcs ...Func[Args]) Func[Args] {
 	}
 }
 
+// PipeGo enhance the serial processing of Pipe with Go rountine concurrency
+// saving most of the time by utilize this function instead of writing manual Go routine code
 func PipeGo[Args any](funcs ...Func[Args]) Func[Args] {
 	return func(args Args, responses []any) (response any, err error) {
 		c := make(chan struct {
