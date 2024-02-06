@@ -166,11 +166,13 @@ func TestPipeAndPipeGo(t *testing.T) {
 					PipeGo(
 						func(args createUserRequest, responses []any) (response any, err error) {
 							time.Sleep(1 * time.Second)
-							return "go" + args.Username, nil
+							username := responses[0].(string)
+							return "go" + username, nil
 						},
 						func(args createUserRequest, responses []any) (response any, err error) {
 							time.Sleep(1 * time.Second)
-							return "go" + args.Email, nil
+							email := responses[1].(string)
+							return "go" + email, nil
 						},
 						func(args createUserRequest, responses []any) (response any, err error) {
 							time.Sleep(1 * time.Second)
