@@ -23,3 +23,13 @@ func Index[T any](r Responses, i int) (t T, valid bool) {
 	}
 	return t, false
 }
+
+// Find used to find responses from a given generic type
+func Find[T any](r Responses) (t T, found bool) {
+	for _, rr := range r {
+		if t, ok := rr.(T); ok {
+			return t, true
+		}
+	}
+	return t, false
+}
