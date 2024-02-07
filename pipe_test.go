@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	util "github.com/sog01/high-order-funcs"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -48,12 +47,16 @@ func TestPipe(t *testing.T) {
 						fmt.Println(email)
 						return args.ProfilePictureUrl, nil
 					},
+					func(args createUserRequest, responses []any) (response any, err error) {
+						return nil, nil
+					},
 				},
 			},
 			want: []any{
 				"username",
 				"email",
 				"profilePictureUrl",
+				nil,
 			},
 		},
 	}
@@ -80,7 +83,7 @@ func TestPipeGo(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want map[string]struct{}
+		want []any
 	}{
 		{
 			name: "create user",
@@ -105,10 +108,10 @@ func TestPipeGo(t *testing.T) {
 					},
 				},
 			},
-			want: map[string]struct{}{
-				"username":          {},
-				"email":             {},
-				"profilePictureUrl": {},
+			want: []any{
+				"username",
+				"email",
+				"profilePictureUrl",
 			},
 		},
 	}
@@ -116,11 +119,7 @@ func TestPipeGo(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			exec := PipeGo(tt.args.funcs...)
 			got, _ := exec(tt.args.args, nil)
-			gotMap := util.Reduce(got.([]interface{}), func(res map[string]struct{}, response any) map[string]struct{} {
-				res[response.(string)] = struct{}{}
-				return res
-			}, map[string]struct{}{})
-			assert.Equal(t, tt.want, gotMap)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }

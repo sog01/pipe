@@ -11,9 +11,6 @@ func Pipe[Args any](funcs ...Func[Args]) Func[Args] {
 			if err != nil {
 				return nil, err
 			}
-			if response == nil {
-				continue
-			}
 			responses = append(responses, response)
 		}
 		return responses, nil
@@ -25,28 +22,36 @@ func Pipe[Args any](funcs ...Func[Args]) Func[Args] {
 func PipeGo[Args any](funcs ...Func[Args]) Func[Args] {
 	return func(args Args, responses []any) (response any, err error) {
 		c := make(chan struct {
+			index    int
 			response any
 			err      error
 		})
-		for _, f := range funcs {
-			go func(f Func[Args]) {
+		for i, f := range funcs {
+			go func(f Func[Args], i int) {
 				response, err = f(args, responses)
 				c <- struct {
+					index    int
 					response any
 					err      error
 				}{
+					index:    i,
 					response: response,
 					err:      err,
 				}
-			}(f)
+			}(f, i)
 		}
 
+		mres := make(map[int]any)
 		for i := 0; i < len(funcs); i++ {
 			resp := <-c
 			if resp.err != nil {
 				return responses, resp.err
 			}
-			responses = append(responses, resp.response)
+			mres[resp.index] = resp.response
+		}
+
+		for i := 0; i < len(mres); i++ {
+			responses = append(responses, mres[i])
 		}
 
 		return responses, nil
