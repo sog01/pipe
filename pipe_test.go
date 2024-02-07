@@ -38,12 +38,12 @@ func TestPipe(t *testing.T) {
 						return args.Username, nil
 					},
 					func(args createUserRequest, responses Responses) (response any, err error) {
-						username, _ := Get[string](responses)
+						username := Get[string](responses)
 						fmt.Println(username)
 						return args.Email, nil
 					},
 					func(args createUserRequest, responses Responses) (response any, err error) {
-						email, _ := Get[string](responses)
+						email := Get[string](responses)
 						fmt.Println(email)
 						return args.ProfilePictureUrl, nil
 					},
@@ -153,12 +153,12 @@ func TestPipeAndPipeGo(t *testing.T) {
 						return args.Username, nil
 					},
 					func(args createUserRequest, responses Responses) (response any, err error) {
-						username, _ := Get[string](responses)
+						username := Get[string](responses)
 						fmt.Println(username)
 						return args.Email, nil
 					},
 					func(args createUserRequest, responses Responses) (response any, err error) {
-						email, _ := Get[string](responses)
+						email := Get[string](responses)
 						fmt.Println(email)
 						return args.ProfilePictureUrl, nil
 					},
@@ -195,12 +195,12 @@ func TestPipeAndPipeGo(t *testing.T) {
 						return args.Username, nil
 					},
 					func(args createUserRequest, responses Responses) (response any, err error) {
-						username, _ := Get[string](responses)
+						username := Get[string](responses)
 						fmt.Println(username)
 						return args.Email, nil
 					},
 					func(args createUserRequest, responses Responses) (response any, err error) {
-						email, _ := Get[string](responses)
+						email := Get[string](responses)
 						fmt.Println(email)
 						return args.ProfilePictureUrl, nil
 					},

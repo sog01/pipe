@@ -44,7 +44,7 @@ type UserInput struct {
 	Password string
 }
 
-func isUserEmailExists(args UserInput, responses []any) (response any, err error) {
+func isUserEmailExists(args UserInput, responses pipe.Responses) (response any, err error) {
 	_, exists := DB[args.Email]
 	if exists {
 		return nil, errors.New("email already exists")
@@ -52,14 +52,14 @@ func isUserEmailExists(args UserInput, responses []any) (response any, err error
 	return nil, nil
 }
 
-func validateUserEmail(args UserInput, responses []any) (response any, err error) {
+func validateUserEmail(args UserInput, responses pipe.Responses) (response any, err error) {
 	if !strings.Contains(args.Email, "@") {
 		return nil, errors.New("incorrect email address")
 	}
 	return nil, nil
 }
 
-func insertUser(args UserInput, responses []any) (response any, err error) {
+func insertUser(args UserInput, responses pipe.Responses) (response any, err error) {
 	DB[args.Email] = args
 	return nil, nil
 }
@@ -112,8 +112,8 @@ func getBlacklistUsers(args UserInput, responses []any) (response any, err error
 	}, nil
 }
 
-func isBlacklistUser(args UserInput, responses []any) (response any, err error) {
-	blacklistUsers := responses[0].(map[string]any)
+func isBlacklistUser(args UserInput, responses pipe.Responses) (response any, err error) {
+	blacklistUsers, _ := pipe.Get[map[string]any](responses)
 	_, isBlacklist := blacklistUsers[args.Email]
 	if isBlacklist {
 		return nil, errors.New("this email is from blacklist")
@@ -122,6 +122,6 @@ func isBlacklistUser(args UserInput, responses []any) (response any, err error) 
 }
 ```
 
-The scenario is to validate the incoming users whether is blackisted or not, so at the beginning we get the blacklist users. Then, we get the `responses` on the next function to validate the users.
+The scenario is to validate the incoming users whether is blackisted or not, so at the beginning we get the blacklist users. Then, we utilize the `responses` on the next function to validate the users.
 
 ## Using Pipe with Concurrency with PipeGo
