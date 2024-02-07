@@ -105,7 +105,7 @@ type UserInput struct {
 	Password string
 }
 
-func getBlacklistUsers(args UserInput, responses []any) (response any, err error) {
+func getBlacklistUsers(args UserInput, responses pipe.Responses) (response any, err error) {
 	return map[string]any{
 		"john.blacklist@bmail.com": struct{}{},
 		"doe.blacklist@bmail.com":  struct{}{},
