@@ -113,7 +113,7 @@ func getBlacklistUsers(args UserInput, responses []any) (response any, err error
 }
 
 func isBlacklistUser(args UserInput, responses pipe.Responses) (response any, err error) {
-	blacklistUsers, _ := pipe.Get[map[string]any](responses)
+	blacklistUsers := pipe.Get[map[string]any](responses)
 	_, isBlacklist := blacklistUsers[args.Email]
 	if isBlacklist {
 		return nil, errors.New("this email is from blacklist")
@@ -122,6 +122,56 @@ func isBlacklistUser(args UserInput, responses pipe.Responses) (response any, er
 }
 ```
 
-The scenario is to validate the incoming users whether is blackisted or not, so at the beginning we get the blacklist users. Then, we utilize the `responses` on the next function to validate the users.
+The scenario is to validate the incoming users whether is blackisted or not, so at the beginning we can get the blacklist users. Then, we utilize the `responses` on the next function to validate the users.
 
-## Using Pipe with Concurrency with PipeGo
+## Concurrency in Pipe with PipeGo
+
+The pipe also support concurrency by simply use `PipeGo` instead. This abstract concurrency under the hood, so we don't need to write Go routine manually:
+
+```go
+package main
+
+import (
+	"errors"
+	"fmt"
+	"strings"
+
+	"github.com/sog01/pipe"
+)
+
+func main() {
+	e := pipe.Pipe(
+		getBlacklistUsers,
+		isBlacklistUser,
+		isUserEmailExists,
+		validateUserEmail,
+		pipe.PipeGo(
+			insertUser,
+			sendNotification,
+			trackUserBehaviour,
+		),
+	)
+
+	_, err := e(UserInput{
+		Email: "john.doe@gmail.com",
+	}, nil)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func insertUser(args UserInput, responses pipe.Responses) (response any, err error) {
+	DB[args.Email] = args
+	return nil, nil
+}
+
+func sendNotification(args UserInput, responses pipe.Responses) (response any, err error) {
+	fmt.Println("send notification")
+	return nil, nil
+}
+
+func trackUserBehaviour(args UserInput, responses pipe.Responses) (response any, err error) {
+	fmt.Println("track user behaviour")
+	return nil, nil
+}
+```
