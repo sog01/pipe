@@ -69,4 +69,59 @@ As a other developer / reviewer we can understand the flow in the first place, t
 
 ## Responses Use Cases
 
+As a pipe function we can use a previous response as an input for the next function. Like an example below :
+
+```go
+package main
+
+import (
+	"errors"
+	"strings"
+
+	"github.com/sog01/pipe"
+)
+
+func main() {
+	e := pipe.Pipe(
+		getBlacklistUsers,
+		isBlacklistUser,
+		...
+	)
+
+	_, err := e(UserInput{
+		Email: "john.blacklist@bmail.com",
+	}, nil)
+	if err != nil {
+		panic(err)
+	}
+}
+
+var (
+	DB = make(map[string]any)
+)
+
+type UserInput struct {
+	Email    string
+	Password string
+}
+
+func getBlacklistUsers(args UserInput, responses []any) (response any, err error) {
+	return map[string]any{
+		"john.blacklist@bmail.com": struct{}{},
+		"doe.blacklist@bmail.com":  struct{}{},
+	}, nil
+}
+
+func isBlacklistUser(args UserInput, responses []any) (response any, err error) {
+	blacklistUsers := responses[0].(map[string]any)
+	_, isBlacklist := blacklistUsers[args.Email]
+	if isBlacklist {
+		return nil, errors.New("this email is from blacklist")
+	}
+	return nil, nil
+}
+```
+
+The scenario is to validate the incoming users whether is blackisted or not, so at the beginning we get the blacklist users. Then, we get the `responses` on the next function to validate the users.
+
 ## Using Pipe with Concurrency with PipeGo

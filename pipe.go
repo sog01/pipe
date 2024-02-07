@@ -1,11 +1,13 @@
 package pipe
 
-type Func[Args any] func(args Args, responses []any) (response any, err error)
+// Func is a series of pipe functions arguments contract
+// when using pipe the function callback must comply with this contract
+type Func[Args any] func(args Args, responses Responses) (response any, err error)
 
 // Pipe series of functions into one processing unit
 // ordering our logic in form of pipe for readable and clean code
 func Pipe[Args any](funcs ...Func[Args]) Func[Args] {
-	return func(args Args, responses []any) (response any, err error) {
+	return func(args Args, responses Responses) (response any, err error) {
 		for _, f := range funcs {
 			response, err = f(args, responses)
 			if err != nil {
@@ -20,7 +22,7 @@ func Pipe[Args any](funcs ...Func[Args]) Func[Args] {
 // PipeGo enhance the serial processing of Pipe with Go rountine concurrency
 // saving most of the time by utilize this function instead of writing manual Go routine code
 func PipeGo[Args any](funcs ...Func[Args]) Func[Args] {
-	return func(args Args, responses []any) (response any, err error) {
+	return func(args Args, responses Responses) (response any, err error) {
 		c := make(chan struct {
 			index    int
 			response any

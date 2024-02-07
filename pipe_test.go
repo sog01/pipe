@@ -23,7 +23,7 @@ func TestPipe(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want []any
+		want Responses
 	}{
 		{
 			name: "create user",
@@ -34,25 +34,25 @@ func TestPipe(t *testing.T) {
 					ProfilePictureUrl: "profilePictureUrl",
 				},
 				funcs: []Func[createUserRequest]{
-					func(args createUserRequest, responses []any) (response any, err error) {
+					func(args createUserRequest, responses Responses) (response any, err error) {
 						return args.Username, nil
 					},
-					func(args createUserRequest, responses []any) (response any, err error) {
-						username := responses[0].(string)
+					func(args createUserRequest, responses Responses) (response any, err error) {
+						username, _ := Get[string](responses)
 						fmt.Println(username)
 						return args.Email, nil
 					},
-					func(args createUserRequest, responses []any) (response any, err error) {
-						email := responses[1].(string)
+					func(args createUserRequest, responses Responses) (response any, err error) {
+						email, _ := Get[string](responses)
 						fmt.Println(email)
 						return args.ProfilePictureUrl, nil
 					},
-					func(args createUserRequest, responses []any) (response any, err error) {
+					func(args createUserRequest, responses Responses) (response any, err error) {
 						return nil, nil
 					},
 				},
 			},
-			want: []any{
+			want: Responses{
 				"username",
 				"email",
 				"profilePictureUrl",
@@ -83,7 +83,7 @@ func TestPipeGo(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want []any
+		want Responses
 	}{
 		{
 			name: "create user",
@@ -94,21 +94,21 @@ func TestPipeGo(t *testing.T) {
 					ProfilePictureUrl: "profilePictureUrl",
 				},
 				funcs: []Func[createUserRequest]{
-					func(args createUserRequest, responses []any) (response any, err error) {
+					func(args createUserRequest, responses Responses) (response any, err error) {
 						time.Sleep(1 * time.Second)
 						return args.Username, nil
 					},
-					func(args createUserRequest, responses []any) (response any, err error) {
+					func(args createUserRequest, responses Responses) (response any, err error) {
 						time.Sleep(1 * time.Second)
 						return args.Email, nil
 					},
-					func(args createUserRequest, responses []any) (response any, err error) {
+					func(args createUserRequest, responses Responses) (response any, err error) {
 						time.Sleep(1 * time.Second)
 						return args.ProfilePictureUrl, nil
 					},
 				},
 			},
-			want: []any{
+			want: Responses{
 				"username",
 				"email",
 				"profilePictureUrl",
@@ -149,31 +149,31 @@ func TestPipeAndPipeGo(t *testing.T) {
 					ProfilePictureUrl: "profilePictureUrl",
 				},
 				funcs: []Func[createUserRequest]{
-					func(args createUserRequest, responses []any) (response any, err error) {
+					func(args createUserRequest, responses Responses) (response any, err error) {
 						return args.Username, nil
 					},
-					func(args createUserRequest, responses []any) (response any, err error) {
-						username := responses[0].(string)
+					func(args createUserRequest, responses Responses) (response any, err error) {
+						username, _ := Get[string](responses)
 						fmt.Println(username)
 						return args.Email, nil
 					},
-					func(args createUserRequest, responses []any) (response any, err error) {
-						email := responses[1].(string)
+					func(args createUserRequest, responses Responses) (response any, err error) {
+						email, _ := Get[string](responses)
 						fmt.Println(email)
 						return args.ProfilePictureUrl, nil
 					},
 					PipeGo(
-						func(args createUserRequest, responses []any) (response any, err error) {
+						func(args createUserRequest, responses Responses) (response any, err error) {
 							time.Sleep(1 * time.Second)
 							username := responses[0].(string)
 							return "go" + username, nil
 						},
-						func(args createUserRequest, responses []any) (response any, err error) {
+						func(args createUserRequest, responses Responses) (response any, err error) {
 							time.Sleep(1 * time.Second)
 							email := responses[1].(string)
 							return "go" + email, nil
 						},
-						func(args createUserRequest, responses []any) (response any, err error) {
+						func(args createUserRequest, responses Responses) (response any, err error) {
 							time.Sleep(1 * time.Second)
 							return "go" + args.ProfilePictureUrl, nil
 						},
@@ -191,29 +191,29 @@ func TestPipeAndPipeGo(t *testing.T) {
 					ProfilePictureUrl: "profilePictureUrl",
 				},
 				funcs: []Func[createUserRequest]{
-					func(args createUserRequest, responses []any) (response any, err error) {
+					func(args createUserRequest, responses Responses) (response any, err error) {
 						return args.Username, nil
 					},
-					func(args createUserRequest, responses []any) (response any, err error) {
-						username := responses[0].(string)
+					func(args createUserRequest, responses Responses) (response any, err error) {
+						username, _ := Get[string](responses)
 						fmt.Println(username)
 						return args.Email, nil
 					},
-					func(args createUserRequest, responses []any) (response any, err error) {
-						email := responses[1].(string)
+					func(args createUserRequest, responses Responses) (response any, err error) {
+						email, _ := Get[string](responses)
 						fmt.Println(email)
 						return args.ProfilePictureUrl, nil
 					},
 					PipeGo(
-						func(args createUserRequest, responses []any) (response any, err error) {
+						func(args createUserRequest, responses Responses) (response any, err error) {
 							time.Sleep(1 * time.Second)
 							return "go" + args.Username, errors.New("errors go username")
 						},
-						func(args createUserRequest, responses []any) (response any, err error) {
+						func(args createUserRequest, responses Responses) (response any, err error) {
 							time.Sleep(1 * time.Second)
 							return "go" + args.Email, nil
 						},
-						func(args createUserRequest, responses []any) (response any, err error) {
+						func(args createUserRequest, responses Responses) (response any, err error) {
 							time.Sleep(1 * time.Second)
 							return "go" + args.ProfilePictureUrl, nil
 						},
