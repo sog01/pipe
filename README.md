@@ -23,7 +23,7 @@ import (
 )
 
 func main() {
-	e := pipe.Pipe(
+	e := pipe.P(
 		isUserEmailExists,
 		validateUserEmail,
 		insertUser,
@@ -31,7 +31,7 @@ func main() {
 
 	_, err := e(UserInput{
 		Email: "john.doe@gmail.com",
-	}, nil)
+	})
 	if err != nil {
 		panic(err)
 	}
@@ -82,7 +82,7 @@ import (
 )
 
 func main() {
-	e := pipe.Pipe(
+	e := pipe.P(
 		getBlacklistUsers,
 		isBlacklistUser,
 		...
@@ -90,7 +90,7 @@ func main() {
 
 	_, err := e(UserInput{
 		Email: "john.blacklist@bmail.com",
-	}, nil)
+	})
 	if err != nil {
 		panic(err)
 	}
@@ -140,7 +140,7 @@ import (
 )
 
 func main() {
-	e := pipe.Pipe(
+	e := pipe.P(
 		getBlacklistUsers,
 		isBlacklistUser,
 		isUserEmailExists,
@@ -154,7 +154,7 @@ func main() {
 
 	_, err := e(UserInput{
 		Email: "john.doe@gmail.com",
-	}, nil)
+	})
 	if err != nil {
 		panic(err)
 	}
