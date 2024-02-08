@@ -1,5 +1,11 @@
 package pipe
 
+import "context"
+
+// FuncCtx is a series of pipe functions arguments contract
+// when using pipe the function callback must comply with this contract
+type FuncCtx[Args any] func(ctx context.Context, args Args, responses Responses) (response any, err error)
+
 // Func is a series of pipe functions arguments contract
 // when using pipe the function callback must comply with this contract
 type Func[Args any] func(args Args, responses Responses) (response any, err error)
@@ -15,10 +21,21 @@ func P[Args any](funcs ...Func[Args]) func(args Args) (responses Responses, err 
 	}
 }
 
-// Pipe series of functions into one processing unit
+// PCxt to start compose functions with Pipe and Context
+// use when initiate pipe at the beginning
+func PCtx[Args any](funcs ...FuncCtx[Args]) func(ctx context.Context, args Args) (responses Responses, err error) {
+	return func(ctx context.Context, args Args) (responses Responses, err error) {
+		exec := PipeCtx(funcs...)
+		resp, err := exec(ctx, args, nil)
+		r, _ := resp.(Responses)
+		return r, err
+	}
+}
+
+// PipeCtx series of functions into one processing unit
 // ordering our logic in form of pipe for readable and clean code
-func Pipe[Args any](funcs ...Func[Args]) Func[Args] {
-	return func(args Args, responses Responses) (response any, err error) {
+func PipeCtx[Args any](funcs ...FuncCtx[Args]) FuncCtx[Args] {
+	return func(ctx context.Context, args Args, responses Responses) (response any, err error) {
 		_, isFromPipe := responses.(pipeResponse)
 		if responses == nil {
 			responses = pipeResponse{}
@@ -26,7 +43,7 @@ func Pipe[Args any](funcs ...Func[Args]) Func[Args] {
 
 		var newResponses Responses = pipeResponse{}
 		for _, f := range funcs {
-			response, err = f(args, responses)
+			response, err = f(ctx, args, responses)
 			if err != nil {
 				return nil, err
 			}
@@ -45,10 +62,10 @@ func Pipe[Args any](funcs ...Func[Args]) Func[Args] {
 	}
 }
 
-// PipeGo enhance the serial processing of Pipe with Go rountine concurrency
+// PipeGoCtx enhance the serial processing of Pipe with Go rountine concurrency
 // saving most of the time by utilize this function instead of writing manual Go routine code
-func PipeGo[Args any](funcs ...Func[Args]) Func[Args] {
-	return func(args Args, responses Responses) (response any, err error) {
+func PipeGoCtx[Args any](funcs ...FuncCtx[Args]) FuncCtx[Args] {
+	return func(ctx context.Context, args Args, responses Responses) (response any, err error) {
 		_, isFromPipe := responses.(pipeResponse)
 		if responses == nil {
 			responses = pipeResponse{}
@@ -60,8 +77,8 @@ func PipeGo[Args any](funcs ...Func[Args]) Func[Args] {
 		})
 
 		for i, f := range funcs {
-			go func(f Func[Args], i int) {
-				response, err = f(args, responses)
+			go func(f FuncCtx[Args], i int) {
+				response, err = f(ctx, args, responses)
 				c <- struct {
 					index    int
 					response any
@@ -95,5 +112,39 @@ func PipeGo[Args any](funcs ...Func[Args]) Func[Args] {
 		}
 
 		return responses, nil
+	}
+}
+
+// Pipe series of functions into one processing unit
+// ordering our logic in form of pipe for readable and clean code
+func Pipe[Args any](funcs ...Func[Args]) Func[Args] {
+	var funcCtx []FuncCtx[Args]
+	for _, f := range funcs {
+		ff := f
+		funcCtx = append(funcCtx, func(ctx context.Context, args Args, responses Responses) (response any, err error) {
+			return ff(args, responses)
+		})
+	}
+
+	fctx := PipeCtx(funcCtx...)
+	return func(args Args, responses Responses) (response any, err error) {
+		return fctx(context.TODO(), args, responses)
+	}
+}
+
+// PipeGo enhance the serial processing of Pipe with Go rountine concurrency
+// saving most of the time by utilize this function instead of writing manual Go routine code
+func PipeGo[Args any](funcs ...Func[Args]) Func[Args] {
+	var funcCtx []FuncCtx[Args]
+	for _, f := range funcs {
+		ff := f
+		funcCtx = append(funcCtx, func(ctx context.Context, args Args, responses Responses) (response any, err error) {
+			return ff(args, responses)
+		})
+	}
+
+	fctx := PipeGoCtx(funcCtx...)
+	return func(args Args, responses Responses) (response any, err error) {
+		return fctx(context.TODO(), args, responses)
 	}
 }
