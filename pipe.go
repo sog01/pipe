@@ -6,10 +6,12 @@ type Func[Args any] func(args Args, responses Responses) (response any, err erro
 
 // P to start compose functions with Pipe
 // use when initiate pipe at the beginning
-func P[Args any](funcs ...Func[Args]) func(args Args) (response any, err error) {
-	return func(args Args) (response any, err error) {
+func P[Args any](funcs ...Func[Args]) func(args Args) (responses Responses, err error) {
+	return func(args Args) (responses Responses, err error) {
 		exec := Pipe(funcs...)
-		return exec(args, nil)
+		resp, err := exec(args, nil)
+		r, _ := resp.(Responses)
+		return r, err
 	}
 }
 
