@@ -8,13 +8,28 @@ type Func[Args any] func(args Args, responses Responses) (response any, err erro
 // ordering our logic in form of pipe for readable and clean code
 func Pipe[Args any](funcs ...Func[Args]) Func[Args] {
 	return func(args Args, responses Responses) (response any, err error) {
+		_, isFromPipe := responses.(pipeResponse)
+		if responses == nil {
+			responses = pipeResponse{}
+		}
+
+		var newResponses Responses = pipeResponse{}
 		for _, f := range funcs {
 			response, err = f(args, responses)
 			if err != nil {
 				return nil, err
 			}
-			responses = append(responses, response)
+			responses = responses.Add(response)
+
+			if isFromPipe {
+				newResponses = newResponses.Add(response)
+			}
 		}
+
+		if isFromPipe {
+			return newResponses, nil
+		}
+
 		return responses, nil
 	}
 }
@@ -23,11 +38,16 @@ func Pipe[Args any](funcs ...Func[Args]) Func[Args] {
 // saving most of the time by utilize this function instead of writing manual Go routine code
 func PipeGo[Args any](funcs ...Func[Args]) Func[Args] {
 	return func(args Args, responses Responses) (response any, err error) {
+		_, isFromPipe := responses.(pipeResponse)
+		if responses == nil {
+			responses = pipeResponse{}
+		}
 		c := make(chan struct {
 			index    int
 			response any
 			err      error
 		})
+
 		for i, f := range funcs {
 			go func(f Func[Args], i int) {
 				response, err = f(args, responses)
@@ -52,8 +72,15 @@ func PipeGo[Args any](funcs ...Func[Args]) Func[Args] {
 			mres[resp.index] = resp.response
 		}
 
+		var newResponses Responses = pipeResponse{}
 		for i := 0; i < len(mres); i++ {
-			responses = append(responses, mres[i])
+			responses = responses.Add(mres[i])
+			if isFromPipe {
+				newResponses = newResponses.Add(mres[i])
+			}
+		}
+		if isFromPipe {
+			return newResponses, nil
 		}
 
 		return responses, nil

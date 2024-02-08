@@ -1,7 +1,6 @@
 package pipe
 
 import (
-	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -52,11 +51,13 @@ func TestPipe(t *testing.T) {
 					},
 				},
 			},
-			want: Responses{
-				"username",
-				"email",
-				"profilePictureUrl",
-				nil,
+			want: pipeResponse{
+				resp: []any{
+					"username",
+					"email",
+					"profilePictureUrl",
+					nil,
+				},
 			},
 		},
 	}
@@ -108,10 +109,12 @@ func TestPipeGo(t *testing.T) {
 					},
 				},
 			},
-			want: Responses{
-				"username",
-				"email",
-				"profilePictureUrl",
+			want: pipeResponse{
+				resp: []any{
+					"username",
+					"email",
+					"profilePictureUrl",
+				},
 			},
 		},
 	}
@@ -136,9 +139,9 @@ func TestPipeAndPipeGo(t *testing.T) {
 		funcs []Func[createUserRequest]
 	}
 	tests := []struct {
-		name    string
-		args    args
-		wantErr error
+		name string
+		args args
+		want Responses
 	}{
 		{
 			name: "create user",
@@ -165,12 +168,12 @@ func TestPipeAndPipeGo(t *testing.T) {
 					PipeGo(
 						func(args createUserRequest, responses Responses) (response any, err error) {
 							time.Sleep(1 * time.Second)
-							username := responses[0].(string)
+							username, _ := Index[string](responses, 0)
 							return "go" + username, nil
 						},
 						func(args createUserRequest, responses Responses) (response any, err error) {
 							time.Sleep(1 * time.Second)
-							email := responses[1].(string)
+							email, _ := Index[string](responses, 1)
 							return "go" + email, nil
 						},
 						func(args createUserRequest, responses Responses) (response any, err error) {
@@ -180,10 +183,19 @@ func TestPipeAndPipeGo(t *testing.T) {
 					),
 				},
 			},
-			wantErr: nil,
+			want: pipeResponse{
+				[]any{
+					"username",
+					"email",
+					"profilePictureUrl",
+					"gousername",
+					"goemail",
+					"goprofilePictureUrl",
+				},
+			},
 		},
 		{
-			name: "create user error",
+			name: "create with several pipe",
 			args: args{
 				args: createUserRequest{
 					Username:          "username",
@@ -207,27 +219,70 @@ func TestPipeAndPipeGo(t *testing.T) {
 					PipeGo(
 						func(args createUserRequest, responses Responses) (response any, err error) {
 							time.Sleep(1 * time.Second)
-							return "go" + args.Username, errors.New("errors go username")
+							username, _ := Index[string](responses, 0)
+							return "go" + username, nil
 						},
 						func(args createUserRequest, responses Responses) (response any, err error) {
 							time.Sleep(1 * time.Second)
-							return "go" + args.Email, nil
+							email, _ := Index[string](responses, 1)
+							return "go" + email, nil
 						},
 						func(args createUserRequest, responses Responses) (response any, err error) {
 							time.Sleep(1 * time.Second)
 							return "go" + args.ProfilePictureUrl, nil
 						},
 					),
+					Pipe(
+						func(args createUserRequest, responses Responses) (response any, err error) {
+							username, _ := Index[string](responses, 0)
+							return "p" + username, nil
+						},
+						func(args createUserRequest, responses Responses) (response any, err error) {
+							email, _ := Index[string](responses, 1)
+							return "p" + email, nil
+						},
+						func(args createUserRequest, responses Responses) (response any, err error) {
+							return "p" + args.ProfilePictureUrl, nil
+						},
+						Pipe(
+							func(args createUserRequest, responses Responses) (response any, err error) {
+								username, _ := Index[string](responses, 0)
+								return "p1" + username, nil
+							},
+							func(args createUserRequest, responses Responses) (response any, err error) {
+								email, _ := Index[string](responses, 1)
+								return "p1" + email, nil
+							},
+							func(args createUserRequest, responses Responses) (response any, err error) {
+								return "p1" + args.ProfilePictureUrl, nil
+							},
+						),
+					),
 				},
 			},
-			wantErr: errors.New("errors go username"),
+			want: pipeResponse{
+				[]any{
+					"username",
+					"email",
+					"profilePictureUrl",
+					"gousername",
+					"goemail",
+					"goprofilePictureUrl",
+					"pusername",
+					"pemail",
+					"pprofilePictureUrl",
+					"p1username",
+					"p1email",
+					"p1profilePictureUrl",
+				},
+			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			exec := Pipe(tt.args.funcs...)
-			_, err := exec(tt.args.args, nil)
-			assert.Equal(t, tt.wantErr, err)
+			got, _ := exec(tt.args.args, nil)
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
