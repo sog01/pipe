@@ -63,8 +63,8 @@ func TestPipe(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			exec := Pipe(tt.args.funcs...)
-			got, _ := exec(tt.args.args, nil)
+			exec := P(tt.args.funcs...)
+			got, _ := exec(tt.args.args)
 			assert.Equal(t, tt.want, got)
 		})
 	}
@@ -120,8 +120,8 @@ func TestPipeGo(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			exec := PipeGo(tt.args.funcs...)
-			got, _ := exec(tt.args.args, nil)
+			exec := P(tt.args.funcs...)
+			got, _ := exec(tt.args.args)
 			assert.Equal(t, tt.want, got)
 		})
 	}
@@ -280,8 +280,8 @@ func TestPipeAndPipeGo(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			exec := Pipe(tt.args.funcs...)
-			got, _ := exec(tt.args.args, nil)
+			exec := P(tt.args.funcs...)
+			got, _ := exec(tt.args.args)
 			assert.Equal(t, tt.want, got)
 		})
 	}

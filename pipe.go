@@ -4,6 +4,15 @@ package pipe
 // when using pipe the function callback must comply with this contract
 type Func[Args any] func(args Args, responses Responses) (response any, err error)
 
+// P to start compose functions with Pipe
+// use when initiate pipe at the beginning
+func P[Args any](funcs ...Func[Args]) func(args Args) (response any, err error) {
+	return func(args Args) (response any, err error) {
+		exec := Pipe(funcs...)
+		return exec(args, nil)
+	}
+}
+
 // Pipe series of functions into one processing unit
 // ordering our logic in form of pipe for readable and clean code
 func Pipe[Args any](funcs ...Func[Args]) Func[Args] {
